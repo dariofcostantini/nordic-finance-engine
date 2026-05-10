@@ -2,7 +2,8 @@ import streamlit as st
 from decimal import Decimal
 from datetime import date
 from loan_models import PaymentFrequency
-# from loan_schedule import LoanScheduleGenerator # We will use this in step 2
+from loan_schedule import LoanScheduleGenerator
+import pandas as pd
 
 # 1. Configuración básica de la página (Pestaña del navegador)
 st.set_page_config(
@@ -57,7 +58,68 @@ calculate_btn = st.sidebar.button("Generar Cronograma", type="primary")
 
 # 4. Zona Principal de la pantalla
 if calculate_btn:
-    st.info("Aquí conectaremos nuestro motor matemático en el Paso 2.")
-    # st.write(f"Has pedido: {ui_principal} a {ui_years} años con el {ui_system_type}")
+    # 4.1 Preparar parámetros para el backend (Decimal)
+    principal = Decimal(str(ui_principal))
+    annual_rate = Decimal(str(ui_rate_percentage)) / Decimal('100')
+    
+    # 4.2 Enviar los datos al motor matemático correcto
+    with st.spinner('Procesando cálculos financieros...'):
+        if "1" in ui_system_type:
+            schedule = LoanScheduleGenerator.generate_annuity_schedule(
+                principal, annual_rate, date.today(), ui_years, PaymentFrequency.MONTHLY
+            )
+        elif "2" in ui_system_type:
+            schedule = LoanScheduleGenerator.generate_serial_schedule(
+                principal, annual_rate, date.today(), ui_years, PaymentFrequency.MONTHLY
+            )
+        else:
+            schedule = LoanScheduleGenerator.generate_bullet_schedule(
+                principal, annual_rate, date.today(), ui_years, PaymentFrequency.MONTHLY
+            )
+            
+    # 4.3 Convertir la respuesta a Pandas DataFrame para visualización
+    df = pd.DataFrame([row.__dict__ for row in schedule])
+    df['due_date'] = df['due_date'].astype(str) # Formato de fecha
+    
+    # 4.4 KPIs (Key Performance Indicators)
+    total_interest = df['interest_paid'].sum()
+    total_paid = df['payment_amount'].sum()
+    
+    st.markdown("### 📊 Resumen de la Operación")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Capital Solicitado", f"{ui_principal:,.2f}")
+    col2.metric("Interés Total a Pagar", f"{float(total_interest):,.2f}")
+    col3.metric("Costo Total (Capital + Interés)", f"{float(total_paid):,.2f}")
+    
+    st.markdown("---")
+    
+    # 4.5 Gráfico de Barras Apiladas (Composición de la Cuota)
+    st.markdown("### 📈 Composición de la Cuota en el Tiempo")
+    
+    # Preparamos los datos para el gráfico
+    # Usamos 'payment_number' como el eje X, y apilamos Capital e Interés
+    chart_data = df[['payment_number', 'principal_paid', 'interest_paid']].copy()
+    chart_data.set_index('payment_number', inplace=True)
+    
+    # Streamlit hace barras apiladas por defecto cuando le pasas múltiples columnas
+    st.bar_chart(chart_data)
+    
+    st.markdown("---")
+    
+    # 4.6 Tabla de datos interactiva
+    st.markdown("### 🗓️ Cronograma de Amortización Oficial")
+    st.dataframe(
+        df, 
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "payment_number": "Nº Cuota",
+            "due_date": "Fecha de Pago",
+            "payment_amount": st.column_config.NumberColumn("Cuota Total a Pagar", format="%.2f"),
+            "principal_paid": st.column_config.NumberColumn("Amortización Capital", format="%.2f"),
+            "interest_paid": st.column_config.NumberColumn("Pago Interés", format="%.2f"),
+            "remaining_balance": st.column_config.NumberColumn("Saldo Restante", format="%.2f"),
+        }
+    )
 else:
     st.write("👈 Ajusta los parámetros en la barra lateral y presiona 'Generar Cronograma'.")
