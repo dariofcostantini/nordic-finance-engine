@@ -139,3 +139,56 @@ class LoanScheduleGenerator:
             schedule.append(row)
             
         return schedule
+
+    @staticmethod
+    def generate_bullet_schedule(
+        principal: Decimal,
+        annual_interest_rate: Decimal,
+        start_date: date,
+        years: int,
+        frequency: PaymentFrequency = PaymentFrequency.MONTHLY
+    ) -> List[AmortizationRow]:
+        """
+        Generates the schedule for an American System Loan (Bullet).
+        In a Bullet loan, you ONLY pay interest every period. 
+        The entire principal is paid back in a single lump sum on the final payment date.
+        """
+        schedule: List[AmortizationRow] = []
+        
+        payments_per_year = frequency.value
+        total_payments = years * payments_per_year
+        periodic_rate = annual_interest_rate / Decimal(payments_per_year)
+        
+        current_balance = principal
+        current_date = start_date
+
+        for payment_num in range(1, total_payments + 1):
+            months_to_add = 12 // payments_per_year
+            current_date += relativedelta(months=months_to_add)
+
+            # 1. Interest is constant because the balance never changes until the end
+            interest_paid = (current_balance * periodic_rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            
+            # 2. Principal paid is 0, UNLESS it's the very last payment
+            if payment_num == total_payments:
+                principal_paid = current_balance
+            else:
+                principal_paid = Decimal('0.00')
+
+            # 3. Total payment
+            total_payment = principal_paid + interest_paid
+            
+            # 4. Update balance
+            current_balance -= principal_paid
+            
+            row = AmortizationRow(
+                payment_number=payment_num,
+                due_date=current_date,
+                payment_amount=total_payment,
+                principal_paid=principal_paid,
+                interest_paid=interest_paid,
+                remaining_balance=current_balance
+            )
+            schedule.append(row)
+            
+        return schedule

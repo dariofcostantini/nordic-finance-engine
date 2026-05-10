@@ -25,7 +25,8 @@ def main():
         print("\n5. Select Amortization System:")
         print("   [1] French System (Annuitetslån) - Constant total payment")
         print("   [2] German System (Serielån) - Constant principal payment")
-        system_type = input("   Choice [1 or 2]: ")
+        print("   [3] American System (Bullet) - Interest only, principal at the end")
+        system_type = input("   Choice [1, 2 or 3]: ")
         
     except Exception as e:
         print("\n❌ Error: Invalid input. Please enter numbers only.")
@@ -43,6 +44,15 @@ def main():
     elif system_type == "2":
         print("\n⏳ Generating Serielån (German System) Schedule...\n")
         schedule = LoanScheduleGenerator.generate_serial_schedule(
+            principal=principal,
+            annual_interest_rate=annual_rate,
+            start_date=date.today(),
+            years=years,
+            frequency=PaymentFrequency.MONTHLY
+        )
+    elif system_type == "3":
+        print("\n⏳ Generating Bullet (American System) Schedule...\n")
+        schedule = LoanScheduleGenerator.generate_bullet_schedule(
             principal=principal,
             annual_interest_rate=annual_rate,
             start_date=date.today(),
