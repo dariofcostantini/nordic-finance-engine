@@ -4,6 +4,7 @@ from datetime import date
 from loan_models import PaymentFrequency
 from loan_schedule import LoanScheduleGenerator
 import pandas as pd
+import plotly.express as px
 
 # 1. Configuración básica de la página (Pestaña del navegador)
 st.set_page_config(
@@ -41,6 +42,11 @@ ui_years = st.sidebar.number_input(
     max_value=40,
     value=25,
     step=1
+)
+
+ui_currency = st.sidebar.text_input(
+    label="Moneda",
+    value="NOK"
 )
 
 ui_system_type = st.sidebar.selectbox(
@@ -93,16 +99,54 @@ if calculate_btn:
     
     st.markdown("---")
     
-    # 4.5 Gráfico de Barras Apiladas (Composición de la Cuota)
+    # 4.5 Gráfico de Barras Apiladas (Composición de la Cuota con Plotly)
     st.markdown("### 📈 Composición de la Cuota en el Tiempo")
     
-    # Preparamos los datos para el gráfico
-    # Usamos 'payment_number' como el eje X, y apilamos Capital e Interés
-    chart_data = df[['payment_number', 'principal_paid', 'interest_paid']].copy()
-    chart_data.set_index('payment_number', inplace=True)
+    # Preparamos los datos aislando las columnas que necesitamos
+    chart_data = df[['due_date', 'principal_paid', 'interest_paid']].copy()
     
-    # Streamlit hace barras apiladas por defecto cuando le pasas múltiples columnas
-    st.bar_chart(chart_data)
+    # Transformar a formato "Long" (Melt) que es el estándar para barras apiladas en Data Science
+    chart_data_melted = chart_data.melt(
+        id_vars=['due_date'], 
+        value_vars=['principal_paid', 'interest_paid'],
+        var_name='Tipo de Pago', 
+        value_name='Monto'
+    )
+    
+    # Renombrar para que se vea bien en la leyenda de la UI
+    chart_data_melted['Tipo de Pago'] = chart_data_melted['Tipo de Pago'].replace({
+        'principal_paid': 'Amortización Capital',
+        'interest_paid': 'Interés'
+    })
+
+    # Crear el gráfico
+    fig = px.bar(
+        chart_data_melted, 
+        x='due_date', 
+        y='Monto', 
+        color='Tipo de Pago',
+        color_discrete_sequence=["#1f77b4", "#ff7f0e"] # Azul corporativo y naranja
+    )
+    
+    # Formateo Premium de Ejes
+    fig.update_layout(
+        xaxis_title="Año",
+        yaxis_title=f"Monto ({ui_currency.upper()})",
+        height=450, # Tamaño fijo para que no salte al recalcular
+        barmode='stack', # Barras apiladas
+        hovermode="x unified", # Tooltip unificado al pasar el mouse
+        legend_title=None,
+        margin=dict(l=0, r=0, t=30, b=0)
+    )
+    
+    # Formatear el eje X para mostrar años enteros, y el eje Y con separadores de miles
+    fig.update_xaxes(
+        dtick="M12", # Mostrar etiqueta cada 12 meses (1 año)
+        tickformat="%Y" # Mostrar solo el año "2026", "2027"
+    )
+    fig.update_yaxes(tickformat=",.0f") # Sin decimales en el eje Y para no ensuciar visualmente
+    
+    st.plotly_chart(fig, use_container_width=True)
     
     st.markdown("---")
     
