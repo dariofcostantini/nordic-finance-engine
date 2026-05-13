@@ -99,41 +99,45 @@ if calculate_btn:
     
     st.markdown("---")
     
-    # 4.5 Gráfico de Barras Apiladas (Composición de la Cuota con Plotly)
-    st.markdown("### 📈 Composición de la Cuota en el Tiempo")
+    # 4.5 Gráfico de Líneas (Evolución de los componentes de la cuota)
+    st.markdown("### 📈 Evolución de la Cuota en el Tiempo (Curvas de Amortización)")
     
-    # Preparamos los datos aislando las columnas que necesitamos
-    chart_data = df[['due_date', 'principal_paid', 'interest_paid']].copy()
+    # Preparamos los datos para el gráfico de líneas
+    chart_data = df[['due_date', 'principal_paid', 'interest_paid', 'payment_amount']].copy()
     
-    # Transformar a formato "Long" (Melt) que es el estándar para barras apiladas en Data Science
+    # Transformar a formato Long para Plotly
     chart_data_melted = chart_data.melt(
         id_vars=['due_date'], 
-        value_vars=['principal_paid', 'interest_paid'],
-        var_name='Tipo de Pago', 
+        value_vars=['principal_paid', 'interest_paid', 'payment_amount'],
+        var_name='Curva', 
         value_name='Monto'
     )
     
-    # Renombrar para que se vea bien en la leyenda de la UI
-    chart_data_melted['Tipo de Pago'] = chart_data_melted['Tipo de Pago'].replace({
-        'principal_paid': 'Amortización Capital',
-        'interest_paid': 'Interés'
+    # Nombres elegantes para la leyenda
+    chart_data_melted['Curva'] = chart_data_melted['Curva'].replace({
+        'principal_paid': 'Amortización de Capital',
+        'interest_paid': 'Pago de Intereses',
+        'payment_amount': 'Cuota Total a Pagar'
     })
 
-    # Crear el gráfico
-    fig = px.bar(
+    # Crear el gráfico de líneas
+    fig = px.line(
         chart_data_melted, 
         x='due_date', 
         y='Monto', 
-        color='Tipo de Pago',
-        color_discrete_sequence=["#1f77b4", "#ff7f0e"] # Azul corporativo y naranja
+        color='Curva',
+        color_discrete_sequence=["#2ca02c", "#d62728", "#1f77b4"] # Verde (Capital), Rojo (Interés), Azul (Cuota Total)
     )
+    
+    # Hacer que la línea de la Cuota Total sea punteada/discreta para diferenciarla de los componentes
+    fig.update_traces(patch={"line": {"dash": "dot"}}, selector={"legendgroup": "Cuota Total a Pagar"})
+    fig.update_traces(line=dict(width=3)) # Líneas un poco más gruesas y premium
     
     # Formateo Premium de Ejes
     fig.update_layout(
         xaxis_title="Año",
         yaxis_title=f"Monto ({ui_currency.upper()})",
-        height=450, # Tamaño fijo para que no salte al recalcular
-        barmode='stack', # Barras apiladas
+        height=450, # Tamaño fijo inmutable
         hovermode="x unified", # Tooltip unificado al pasar el mouse
         legend_title=None,
         margin=dict(l=0, r=0, t=30, b=0)
@@ -144,7 +148,7 @@ if calculate_btn:
         dtick="M12", # Mostrar etiqueta cada 12 meses (1 año)
         tickformat="%Y" # Mostrar solo el año "2026", "2027"
     )
-    fig.update_yaxes(tickformat=",.0f") # Sin decimales en el eje Y para no ensuciar visualmente
+    fig.update_yaxes(tickformat=",.0f")
     
     st.plotly_chart(fig, use_container_width=True)
     
