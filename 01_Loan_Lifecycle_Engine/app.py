@@ -1,4 +1,10 @@
 import streamlit as st
+import sys
+from pathlib import Path
+
+# Garantizar que Streamlit Cloud encuentre los módulos locales al ejecutar desde subcarpetas
+sys.path.append(str(Path(__file__).parent))
+
 from decimal import Decimal
 from datetime import date
 from loan_models import PaymentFrequency
