@@ -46,7 +46,7 @@ ui_years = st.sidebar.number_input(
     label="Plazo en Años",
     min_value=1,
     max_value=40,
-    value=25,
+    value=2,
     step=1
 )
 
