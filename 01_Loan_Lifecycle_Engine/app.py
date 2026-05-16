@@ -151,10 +151,15 @@ if calculate_btn:
         bargap=0.2 # Espacio entre las columnas para un diseño más limpio
     )
     
-    # Formatear el eje X para mostrar años enteros, y el eje Y con separadores de miles
+    # Formatear el eje X para mostrar años enteros
+    # Añadimos un mes y medio de espacio extra (padding) a los lados para que las primeras y últimas barras no toquen los bordes
+    min_date = pd.to_datetime(df['due_date'].min()) - pd.Timedelta(days=45)
+    max_date = pd.to_datetime(df['due_date'].max()) + pd.Timedelta(days=45)
+    
     fig.update_xaxes(
         dtick="M12", # Mostrar etiqueta cada 12 meses (1 año)
-        tickformat="%Y" # Mostrar solo el año "2026", "2027"
+        tickformat="%Y", # Mostrar solo el año "2026", "2027"
+        range=[min_date.strftime('%Y-%m-%d'), max_date.strftime('%Y-%m-%d')]
     )
     # Añadimos un 15% de espacio extra (headroom) al eje Y para que las barras no toquen el techo
     max_y_val = float(df['payment_amount'].max()) * 1.15
