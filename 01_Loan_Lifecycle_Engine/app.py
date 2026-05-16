@@ -38,7 +38,7 @@ ui_rate_percentage = st.sidebar.number_input(
     label="Tasa de Interés Anual (%)",
     min_value=0.0,
     max_value=100.0,
-    value=5,
+    value=5.0,
     step=0.1
 )
 
