@@ -144,10 +144,11 @@ if calculate_btn:
     fig.update_layout(
         xaxis_title="Año",
         yaxis_title=f"Monto ({ui_currency.upper()})",
-        height=450, # Tamaño fijo inmutable
-        hovermode="x unified", # Tooltip unificado al pasar el mouse
+        height=450,
+        hovermode="x unified",
         legend_title=None,
-        margin=dict(l=0, r=0, t=30, b=0)
+        margin=dict(l=20, r=20, t=40, b=20), # Agregamos márgenes para separar de los bordes
+        bargap=0.2 # Espacio entre las columnas para un diseño más limpio
     )
     
     # Formatear el eje X para mostrar años enteros, y el eje Y con separadores de miles
