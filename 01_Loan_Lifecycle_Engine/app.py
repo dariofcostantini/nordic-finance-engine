@@ -30,15 +30,15 @@ st.sidebar.header("⚙️ Parámetros del Préstamo")
 ui_principal = st.sidebar.number_input(
     label="Monto del Préstamo (Principal)",
     min_value=1000.0,
-    value=1000000.0,
-    step=10000.0
+    value=1000.0,
+    step=1000.0
 )
 
 ui_rate_percentage = st.sidebar.number_input(
     label="Tasa de Interés Anual (%)",
     min_value=0.0,
     max_value=100.0,
-    value=4.5,
+    value=5,
     step=0.1
 )
 
