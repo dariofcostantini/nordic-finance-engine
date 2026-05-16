@@ -156,7 +156,9 @@ if calculate_btn:
         dtick="M12", # Mostrar etiqueta cada 12 meses (1 año)
         tickformat="%Y" # Mostrar solo el año "2026", "2027"
     )
-    fig.update_yaxes(tickformat=",.0f")
+    # Añadimos un 15% de espacio extra (headroom) al eje Y para que las barras no toquen el techo
+    max_y_val = float(df['payment_amount'].max()) * 1.15
+    fig.update_yaxes(tickformat=",.0f", range=[0, max_y_val])
     
     # Dar formato de moneda a los valores del tooltip (hover)
     fig.update_traces(hovertemplate="%{y:,.2f}")
