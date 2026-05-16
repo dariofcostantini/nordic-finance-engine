@@ -105,39 +105,40 @@ if calculate_btn:
     
     st.markdown("---")
     
-    # 4.5 Gráfico de Líneas (Evolución de los componentes de la cuota)
-    st.markdown("### 📈 Evolución de la Cuota en el Tiempo (Curvas de Amortización)")
+    # 4.5 Gráfico de Barras Apiladas (Composición de la cuota)
+    st.markdown("### 📈 Composición de la Cuota (Capital e Interés)")
     
-    # Preparamos los datos para el gráfico de líneas
+    # Preparamos los datos
     chart_data = df[['due_date', 'principal_paid', 'interest_paid', 'payment_amount']].copy()
+    chart_data.rename(columns={'payment_amount': 'Cuota Total'}, inplace=True)
     
-    # Transformar a formato Long para Plotly
+    # Transformar a formato Long para Plotly (solo apilamos Capital e Interés)
     chart_data_melted = chart_data.melt(
-        id_vars=['due_date'], 
-        value_vars=['principal_paid', 'interest_paid', 'payment_amount'],
-        var_name='Curva', 
+        id_vars=['due_date', 'Cuota Total'], 
+        value_vars=['principal_paid', 'interest_paid'],
+        var_name='Componente', 
         value_name='Monto'
     )
     
     # Nombres elegantes para la leyenda
-    chart_data_melted['Curva'] = chart_data_melted['Curva'].replace({
-        'principal_paid': 'Amortización de Capital',
-        'interest_paid': 'Pago de Intereses',
-        'payment_amount': 'Cuota Total a Pagar'
+    chart_data_melted['Componente'] = chart_data_melted['Componente'].replace({
+        'principal_paid': 'Amortización Capital',
+        'interest_paid': 'Interés'
     })
 
-    # Crear el gráfico de líneas
-    fig = px.line(
+    # Crear el gráfico de barras apiladas
+    fig = px.bar(
         chart_data_melted, 
         x='due_date', 
         y='Monto', 
-        color='Curva',
-        color_discrete_sequence=["#2ca02c", "#d62728", "#1f77b4"] # Verde (Capital), Rojo (Interés), Azul (Cuota Total)
+        color='Componente',
+        barmode='stack',
+        color_discrete_map={
+            'Amortización Capital': '#E55342', # Naranja/Rojo estilo el diseño
+            'Interés': '#52BDE9'               # Celeste claro estilo el diseño
+        },
+        hover_data={'Cuota Total': ':,.2f', 'due_date': False, 'Componente': False}
     )
-    
-    # Hacer que la línea de la Cuota Total sea punteada/discreta para diferenciarla de los componentes
-    fig.update_traces(patch={"line": {"dash": "dot"}}, selector={"legendgroup": "Cuota Total a Pagar"})
-    fig.update_traces(line=dict(width=3)) # Líneas un poco más gruesas y premium
     
     # Formateo Premium de Ejes
     fig.update_layout(
@@ -155,6 +156,9 @@ if calculate_btn:
         tickformat="%Y" # Mostrar solo el año "2026", "2027"
     )
     fig.update_yaxes(tickformat=",.0f")
+    
+    # Dar formato de moneda a los valores del tooltip (hover)
+    fig.update_traces(hovertemplate="%{y:,.2f}")
     
     st.plotly_chart(fig, use_container_width=True)
     
